@@ -24,10 +24,11 @@ client = OpenAI(base_url="https://openrouter.ai/api/v1", api_key=api_key)
 try:
     reply = client.chat.completions.create(
         model=os.getenv("OPENROUTER_MODEL", "openrouter/free"),
-        messages=[{"role": "user", "content": "Reply: METRO is connected."}],
-        max_tokens=40,
+        messages=[{"role": "user", "content": "Reply with exactly: METRO is connected."}],
+        max_tokens=400,
     )
-    print(reply.choices[0].message.content)
+    text = (reply.choices[0].message.content or "").strip()
+    print(text or "(Model returned no text - try another :free model.)")
 except Exception as exc:
     print(f"Connection failed: {exc}")
     print("Check the key, model access and rate limits, or use METRO's local fallback.")

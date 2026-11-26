@@ -76,6 +76,7 @@ python scripts/preflight.py
 | `ModuleNotFoundError` | Activate the environment and `python -m pip install -r requirements.txt`. |
 | OpenRouter 401 / 403 | Check the key, remove extra spaces, verify account/model access. Never print the key. |
 | Free model unavailable / rate limited | Choose another current `:free` model or use the local fallback. Retry sparingly. |
+| Model gives empty answers | Free reasoning models can spend their token budget thinking. METRO now uses larger budgets and retries once; switch models in `.env` if needed. |
 | No CSV file | Keep `transactions.csv` beside `metro.py`. |
 
 ## What participants should leave with

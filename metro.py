@@ -9,6 +9,7 @@ import argparse
 import csv
 import json
 import os
+import re
 from pathlib import Path
 from typing import TypedDict
 
@@ -149,17 +150,33 @@ def simple_intent(question: str) -> str:
     return "all"
 
 
+def _model_text(messages: list[dict[str, str]], max_tokens: int, temperature: float) -> str:
+    """Return visible model text; reasoning models may need a larger budget.
+
+    Some free OpenRouter models think before answering and can spend the whole
+    token budget without emitting text, so retry once with double the budget.
+    """
+    assert client is not None
+    kwargs = {"model": MODEL, "temperature": temperature, "messages": messages}
+    text = ""
+    for budget in (max_tokens, max_tokens * 2):
+        response = client.chat.completions.create(**kwargs, max_tokens=budget)
+        raw = response.choices[0].message.content or ""
+        text = re.sub(r"<think>.*?</think>", "", raw, flags=re.DOTALL | re.IGNORECASE)
+        text = text.strip()
+        if text:
+            break
+    return text
+
+
 def understand(state: MetroState) -> dict:
     """Ask the model to select one safe analysis path; fall back locally."""
     question = state.get("question", "")
     if client is None:
         return {"intent": simple_intent(question)}
     try:
-        response = client.chat.completions.create(
-            model=MODEL,
-            temperature=0,
-            max_tokens=20,
-            messages=[
+        text = _model_text(
+            [
                 {
                     "role": "system",
                     "content": (
@@ -170,10 +187,12 @@ def understand(state: MetroState) -> dict:
                 },
                 {"role": "user", "content": question},
             ],
+            max_tokens=400,
+            temperature=0,
         )
-        label = (response.choices[0].message.content or "").strip().lower()
-        label = label.replace("`", "").replace(".", "")
-        return {"intent": label if label in INTENTS else simple_intent(question)}
+        cleaned = text.lower().replace("`", "").replace(".", "")
+        labels = [intent for intent in INTENTS if intent in cleaned]
+        return {"intent": labels[0] if len(labels) == 1 else simple_intent(question)}
     except Exception:
         return {"intent": simple_intent(question)}
 
@@ -209,11 +228,8 @@ def explain(state: MetroState) -> dict:
     if client is None:
         return {"answer": offline_explanation(findings)}
     try:
-        response = client.chat.completions.create(
-            model=MODEL,
-            temperature=0.2,
-            max_tokens=220,
-            messages=[
+        answer = _model_text(
+            [
                 {
                     "role": "system",
                     "content": (
@@ -229,9 +245,15 @@ def explain(state: MetroState) -> dict:
                     + "\nComputed data: " + json.dumps(findings),
                 },
             ],
+            max_tokens=900,
+            temperature=0.2,
         )
-        answer = response.choices[0].message.content or ""
-        return {"answer": answer.strip() or offline_explanation(findings)}
+        if answer:
+            return {"answer": answer}
+        return {
+            "answer": offline_explanation(findings)
+            + "\n\n(Model returned no text; used local explanation.)"
+        }
     except Exception:
         return {
             "answer": offline_explanation(findings)

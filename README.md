@@ -166,6 +166,7 @@ stays small. CrewAI is a brief comparison of role-based collaboration, not a pre
 | `ModuleNotFoundError` | Activate the venv and rerun `python -m pip install -r requirements.txt`. |
 | OpenRouter 401 / 403 | Check the key, remove extra spaces, verify model access. Never print the key. |
 | Free model unavailable / rate limited | Pick a current `:free` model, retry sparingly, or use the local fallback. |
+| Report looks offline even with a key | A free reasoning model may use its whole token budget before answering. METRO now allows larger budgets and retries once; if it persists, set a different `:free` model in `.env`. |
 | No CSV file | Keep `transactions.csv` beside `metro.py`. |
 
 See [`docs/FACILITATOR.md`](docs/FACILITATOR.md) for the day-before checklist, low-bandwidth

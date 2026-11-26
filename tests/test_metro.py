@@ -119,6 +119,47 @@ class MetroTests(unittest.TestCase):
             intent = metro.understand({"question": "Show the failed payments."})
         self.assertEqual(intent["intent"], "failed")
 
+    def test_model_calls_use_reasoning_friendly_token_budgets(self) -> None:
+        response = mock.Mock()
+        response.choices = [mock.Mock(message=mock.Mock(content="summary"))]
+        state = {"question": "Give me a summary", "findings": metro.analyse("summary")}
+        with mock.patch.object(metro, "client") as fake_client:
+            fake_client.chat.completions.create.return_value = response
+            metro.understand(state)
+            self.assertGreaterEqual(
+                fake_client.chat.completions.create.call_args.kwargs["max_tokens"], 400
+            )
+            metro.explain(state)
+            self.assertGreaterEqual(
+                fake_client.chat.completions.create.call_args.kwargs["max_tokens"], 900
+            )
+
+    def test_empty_model_response_is_retried_with_a_larger_budget(self) -> None:
+        empty = mock.Mock()
+        empty.choices = [mock.Mock(message=mock.Mock(content=""))]
+        good = mock.Mock()
+        good.choices = [mock.Mock(message=mock.Mock(content="Report"))]
+        state = {"question": "Give me a summary", "findings": metro.analyse("summary")}
+        with mock.patch.object(metro, "client") as fake_client:
+            fake_client.chat.completions.create.side_effect = [empty, good]
+            answer = metro.explain(state)
+        self.assertEqual(answer["answer"], "Report")
+        self.assertEqual(fake_client.chat.completions.create.call_count, 2)
+        self.assertEqual(
+            fake_client.chat.completions.create.call_args.kwargs["max_tokens"], 1800
+        )
+
+    def test_reasoning_tags_are_removed_from_the_answer(self) -> None:
+        response = mock.Mock()
+        response.choices = [
+            mock.Mock(message=mock.Mock(content="<think>internal</think>Final answer"))
+        ]
+        state = {"question": "Give me a summary", "findings": metro.analyse("summary")}
+        with mock.patch.object(metro, "client") as fake_client:
+            fake_client.chat.completions.create.return_value = response
+            answer = metro.explain(state)
+        self.assertEqual(answer["answer"], "Final answer")
+
 
 if __name__ == "__main__":
     unittest.main()
