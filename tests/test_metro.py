@@ -160,6 +160,29 @@ class MetroTests(unittest.TestCase):
             answer = metro.explain(state)
         self.assertEqual(answer["answer"], "Final answer")
 
+    def test_simple_intent_handles_greetings(self) -> None:
+        for question in ("hi", "Hello", "hellow", "hey there", "How are you?", "thanks", "bye"):
+            with self.subTest(question=question):
+                self.assertEqual(metro.simple_intent(question), "chat")
+
+    def test_greetings_do_not_match_words_inside_other_words(self) -> None:
+        self.assertEqual(metro.simple_intent("this sample is large"), "large")
+        self.assertEqual(metro.simple_intent("Give me a summary"), "summary")
+
+    def test_greeting_route_skips_csv_analysis(self) -> None:
+        with mock.patch.object(metro, "read_transactions") as fake_read:
+            result = metro.build_graph().invoke({"question": "hellow"})
+        self.assertEqual(result["intent"], "chat")
+        self.assertNotIn("findings", result)
+        fake_read.assert_not_called()
+        self.assertLessEqual(len(result["answer"].splitlines()), 1)
+
+    def test_understanding_a_greeting_does_not_call_the_model(self) -> None:
+        with mock.patch.object(metro, "client") as fake_client:
+            intent = metro.understand({"question": "hi"})["intent"]
+        self.assertEqual(intent, "chat")
+        fake_client.chat.completions.create.assert_not_called()
+
 
 if __name__ == "__main__":
     unittest.main()

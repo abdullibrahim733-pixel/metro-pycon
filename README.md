@@ -110,6 +110,16 @@ the local report automatically.
 | Which amounts should be reviewed? | `large` |
 | Give me the full transaction review. | `all` |
 
+**Chat mode:** greetings and casual messages such as `hi`, `hello`, `hellow`, `how are you`,
+`thanks` or `bye` take a separate `chat` path and return a single short reply — no CSV report and
+no analysis node. Greetings are detected locally, so they do not spend an API request on routing.
+
+```bash
+python metro.py "hi"
+python metro.py "hellow"
+python metro.py "how are you?"
+```
+
 Expected teaching results from `transactions.csv`:
 
 | Check | Expected |
@@ -127,8 +137,8 @@ trails.
 ## How it works
 
 1. **Ask** — the user asks a plain-language question.
-2. **Route** — LangGraph's `understand` node picks one of five safe labels. A conditional edge
-   sends the state to the matching analysis node.
+2. **Route** — LangGraph's `understand` node picks one of five safe labels, or `chat` for a
+   greeting. A conditional edge sends the state to the matching node.
 3. **Analyse** — ordinary Python reads the CSV and computes totals, failures, repeats and large
    amounts. The model never calculates money.
 4. **Explain** — the model (or the offline fallback) turns the computed facts into a short report.

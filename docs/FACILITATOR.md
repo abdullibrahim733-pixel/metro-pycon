@@ -49,6 +49,9 @@ Which amounts should be reviewed?          → large
 Give me the full transaction review.       → all
 ```
 
+Casual messages (`hi`, `hellow`, `thanks`) take the `chat` path and get a one-line reply — a quick
+way to show that not every input needs a tool or a report.
+
 Useful one-shot commands during the session:
 
 ```bash

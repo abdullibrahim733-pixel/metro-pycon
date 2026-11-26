@@ -15,6 +15,8 @@ SAMPLE_QUESTIONS = {
     "Find repeated transaction IDs.": "duplicates",
     "Which amounts should be reviewed?": "large",
     "Give me the full transaction review.": "all",
+    "hi": "chat",
+    "hellow": "chat",
 }
 
 

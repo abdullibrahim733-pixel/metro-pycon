@@ -33,6 +33,21 @@ client = (
 )
 
 INTENTS = ("summary", "failed", "duplicates", "large", "all")
+CHAT_INTENT = "chat"
+
+_SMALL_TALK_PATTERNS = (
+    r"\b(hi|hello|hey|yo|hiya|helo|hellow|hallo|greetings)\b",
+    r"\bhow are you\b",
+    r"\b(good morning|good afternoon|good evening)\b",
+    r"\b(thanks|thank you|thx)\b",
+    r"\b(bye|goodbye|see you)\b",
+)
+
+
+def _is_small_talk(question: str) -> bool:
+    """Recognise greetings and casual messages without matching words inside others."""
+    text = question.lower().strip()
+    return any(re.search(pattern, text) for pattern in _SMALL_TALK_PATTERNS)
 
 
 class MetroState(TypedDict, total=False):
@@ -127,6 +142,8 @@ def analyse(mode: str) -> dict:
 def simple_intent(question: str) -> str:
     """Offline fallback if the model/API is unavailable."""
     q = question.lower()
+    if _is_small_talk(q):
+        return CHAT_INTENT
     if any(word in q for word in ("duplicate", "repeated", "same id")):
         return "duplicates"
     if any(word in q for word in ("failed", "unsuccessful", "declined")):
@@ -172,6 +189,8 @@ def _model_text(messages: list[dict[str, str]], max_tokens: int, temperature: fl
 def understand(state: MetroState) -> dict:
     """Ask the model to select one safe analysis path; fall back locally."""
     question = state.get("question", "")
+    if _is_small_talk(question):
+        return {"intent": CHAT_INTENT}
     if client is None:
         return {"intent": simple_intent(question)}
     try:
@@ -261,21 +280,62 @@ def explain(state: MetroState) -> dict:
         }
 
 
+def chat_reply(state: MetroState) -> dict:
+    """Answer greetings with one short line; never run the CSV checks."""
+    question = state.get("question", "").lower()
+    if "thank" in question or "thx" in question:
+        text = "You're welcome! Ask me about the sample transactions any time."
+    elif "bye" in question or "goodbye" in question or "see you" in question:
+        text = "Goodbye! Type quit to close METRO, or ask me another question."
+    elif "how are you" in question:
+        text = "I'm ready and working — what would you like to check in the sample?"
+    else:
+        text = (
+            "Hello! I can summarise the sample, list failed payments, repeated IDs "
+            "or large amounts. What would you like to check?"
+        )
+
+    if client is not None:
+        try:
+            model_text = _model_text(
+                [
+                    {
+                        "role": "system",
+                        "content": (
+                            "You are METRO, a friendly learning-only assistant. "
+                            "Reply to a greeting or casual message in ONE short sentence. "
+                            "Never produce a report, bullet list, or transaction figures."
+                        ),
+                    },
+                    {"role": "user", "content": state.get("question", "")},
+                ],
+                max_tokens=200,
+                temperature=0.3,
+            )
+            if model_text:
+                text = model_text.splitlines()[0].strip()
+        except Exception:
+            pass
+    return {"answer": text}
+
+
 def build_graph():
     graph = StateGraph(MetroState)
     graph.add_node("understand", understand)
     for intent in INTENTS:
         graph.add_node(intent, make_analysis_node(intent))
+    graph.add_node(CHAT_INTENT, chat_reply)
     graph.add_node("explain", explain)
 
     graph.add_edge(START, "understand")
     graph.add_conditional_edges(
         "understand",
         lambda state: state.get("intent", "all"),
-        {intent: intent for intent in INTENTS},
+        {**{intent: intent for intent in INTENTS}, CHAT_INTENT: CHAT_INTENT},
     )
     for intent in INTENTS:
         graph.add_edge(intent, "explain")
+    graph.add_edge(CHAT_INTENT, END)
     graph.add_edge("explain", END)
     return graph.compile()
 
