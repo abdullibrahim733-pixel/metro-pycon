@@ -1,0 +1,8 @@
+transaction_id,sender,receiver,amount_tzs,channel,status,timestamp
+TX001,Customer-A,Shop-01,10000,Mobile Money,SUCCESS,2026-11-25 08:10
+TX002,Customer-B,Shop-02,20000,Mobile Money,SUCCESS,2026-11-25 08:42
+TX003,Customer-C,Shop-03,50000,Mobile Money,SUCCESS,2026-11-25 09:18
+TX004,Customer-D,Shop-04,12000,Mobile Money,FAILED,2026-11-25 10:05
+TX005,Customer-E,Shop-05,500000,Mobile Money,SUCCESS,2026-11-25 11:22
+TX006,Customer-F,Shop-06,75000,Mobile Money,FAILED,2026-11-25 12:40
+TX003,Customer-C,Shop-03,50000,Mobile Money,SUCCESS,2026-11-25 09:19

@@ -1,0 +1,4 @@
+# Core dependencies only - CSV handling is built into Python.
+langgraph
+openai
+python-dotenv

@@ -1,0 +1,12 @@
+# Secrets
+.env
+
+# Python cache and environments
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# Workshop extras
+wheelhouse/
+*.log
