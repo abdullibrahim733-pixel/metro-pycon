@@ -20,7 +20,8 @@ METRO/
 ├── .env                      # local config (gitignored)
 ├── README.md                 # this guide
 ├── scripts/
-│   └── preflight.py          # checks that the whole demo works offline
+│   ├── preflight.py          # checks that the whole demo works offline
+│   └── build_training_pdf.py # regenerates the v2 training guide
 ├── tests/
 │   └── test_metro.py         # deterministic unit tests (no API key needed)
 ├── warmups/
@@ -29,8 +30,24 @@ METRO/
 │   └── crewai_warmup.py      # optional role-based comparison
 ├── setup.sh                  # Linux/macOS setup
 ├── setup.ps1                 # Windows setup
-└── docs/
-    └── FACILITATOR.md        # day-before checklist and 30-minute run of show
+├── docs/
+│   └── FACILITATOR.md        # day-before checklist and 30-minute run of show
+├── METRO_PyCon_Tanzania_Training_Guide_v2.pdf   # updated v2 training guide
+└── METRO_PyCon_Tanzania_30_Minute_AI_Agents_Fintech_Lab.pdf  # original v1 guide
+```
+
+## Training guide
+
+The updated **v2** guide is [`METRO_PyCon_Tanzania_Training_Guide_v2.pdf`](METRO_PyCon_Tanzania_Training_Guide_v2.pdf).
+It documents the chat path, the reasoning-model token fix, the full current `metro.py`, and a
+changelog from the original guide. The original PDF is kept for reference.
+
+To regenerate it after editing code or docs (reportlab is documentation-only, not a runtime
+dependency):
+
+```bash
+python -m pip install reportlab
+python scripts/build_training_pdf.py
 ```
 
 ## Quick start

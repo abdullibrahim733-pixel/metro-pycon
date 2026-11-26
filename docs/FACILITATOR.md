@@ -2,6 +2,8 @@
 
 Goal: protect the 30-minute session from downloads, missing keys and avoidable setup failures.
 
+Use the updated [v2 training guide](../METRO_PyCon_Tanzania_Training_Guide_v2.pdf) with participants — it includes the chat path and reasoning-model fixes.
+
 ## Day-before checklist
 
 - [ ] Test the complete project on one Windows laptop and one Linux laptop with Python 3.11/3.12.
